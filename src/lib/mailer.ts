@@ -3,7 +3,7 @@ import { env } from "./env";
 
 /**
  * Transactional email via the Hostinger business mailboxes.
- * All outgoing mail uses the single business address (event@goodcryptox.com).
+ * All outgoing mail uses the single business address (event@goodcryptox.tech).
  */
 
 let transporter: nodemailer.Transporter | null = null;

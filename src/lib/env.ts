@@ -51,10 +51,10 @@ export const env = {
   mail: {
     // The single business mailbox used for all outgoing mail.
     get from() {
-      return optional("MAIL_FROM", "GoodCryptoX <event@goodcryptox.com>");
+      return optional("MAIL_FROM", "GoodCryptoX <event@goodcryptox.tech>");
     },
     get reviewInbox() {
-      return optional("HIRING_REVIEW_INBOX", "event@goodcryptox.com");
+      return optional("HIRING_REVIEW_INBOX", "event@goodcryptox.tech");
     },
   },
 

@@ -11,7 +11,7 @@ A full-stack Next.js application for **GoodCryptoX** that combines:
    hashing, and encrypted-at-rest sensitive data.
 
 All transactional email is sent from the dedicated business mailboxes
-(event@goodcryptox.com).
+(event@goodcryptox.tech).
 
 ---
 
@@ -197,7 +197,7 @@ verified email directly.
 
 This targets a **Hostinger VPS** (Ubuntu 22.04/24.04) running the app behind
 Nginx with a Let's Encrypt certificate, managed by PM2. Replace
-`goodcryptox.com` with your domain throughout.
+`goodcryptox.tech` with your domain throughout.
 
 ### 0. Point DNS
 
@@ -208,7 +208,7 @@ In Hostinger **hPanel → Domains → DNS**, create an **A record** for `@` (and
 
 In hPanel → **Emails**, create the mailbox:
 
-- `event@goodcryptox.com`
+- `event@goodcryptox.tech`
 
 Note each mailbox password. Hostinger SMTP settings are:
 `smtp.hostinger.com`, port **465**, SSL/TLS (`SMTP_SECURE="true"`). The
@@ -251,7 +251,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"  # D
 node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"  # SESSION_SECRET
 ```
 
-Set at minimum: `APP_URL="https://goodcryptox.com"`, `DATABASE_URL`,
+Set at minimum: `APP_URL="https://goodcryptox.tech"`, `DATABASE_URL`,
 `DATA_ENCRYPTION_KEY`, `SESSION_SECRET`, all `SMTP_*`/`MAIL_FROM`, and
 `DEEPSEEK_API_KEY`.
 
@@ -286,7 +286,7 @@ nano /etc/nginx/sites-available/goodcryptox
 ```nginx
 server {
     listen 80;
-    server_name goodcryptox.com www.goodcryptox.com;
+    server_name goodcryptox.tech www.goodcryptox.tech;
 
     location / {
         proxy_pass         http://127.0.0.1:3000;
@@ -311,7 +311,7 @@ nginx -t && systemctl reload nginx
 
 ```bash
 apt-get install -y certbot python3-certbot-nginx
-certbot --nginx -d goodcryptox.com -d www.goodcryptox.com
+certbot --nginx -d goodcryptox.tech -d www.goodcryptox.tech
 ```
 
 Certbot edits the Nginx config for TLS and sets up auto-renewal. Because
@@ -328,7 +328,7 @@ ufw enable
 
 ### 10. Verify
 
-Visit `https://goodcryptox.com`, register a test account, confirm the
+Visit `https://goodcryptox.tech`, register a test account, confirm the
 verification email arrives from `event@`, sign in, and chat with Nova.
 
 ### Updating a deployed instance

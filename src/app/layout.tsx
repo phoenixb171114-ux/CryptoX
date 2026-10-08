@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="footer">
           <div className="container">
             © {new Date().getFullYear()} GoodCryptoX · Contact:{" "}
-            <a href="mailto:event@goodcryptox.com">event@goodcryptox.com</a>
+            <a href="mailto:event@goodcryptox.tech">event@goodcryptox.tech</a>
           </div>
         </footer>
       </body>
