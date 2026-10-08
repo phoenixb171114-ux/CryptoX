@@ -11,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "mail:test": "node --env-file=.env scripts/test-smtp.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",

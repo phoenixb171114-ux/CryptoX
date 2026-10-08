@@ -8,16 +8,41 @@ import { env } from "./env";
 
 let transporter: nodemailer.Transporter | null = null;
 
+/** True only when a real SMTP mailbox is fully configured. */
+export function smtpConfigured(): boolean {
+  return Boolean(env.smtp.host && env.smtp.user && env.smtp.pass);
+}
+
 function getTransporter(): nodemailer.Transporter {
-  if (!transporter) {
+  if (transporter) return transporter;
+
+  if (smtpConfigured()) {
     transporter = nodemailer.createTransport({
       host: env.smtp.host,
       port: env.smtp.port,
-      secure: env.smtp.secure, // true for 465, false for 587 (STARTTLS)
-      auth: env.smtp.user ? { user: env.smtp.user, pass: env.smtp.pass } : undefined,
+      secure: env.smtp.secure, // true for 465 (SSL), false for 587 (STARTTLS)
+      auth: { user: env.smtp.user, pass: env.smtp.pass },
     });
+    console.log(`[mail] SMTP transport ready (${env.smtp.host}:${env.smtp.port} as ${env.smtp.user}).`);
+  } else {
+    // No mailbox configured: don't fail or hang. Use a no-send transport and
+    // print each message (plus any links) to the server console so flows like
+    // email verification remain testable locally.
+    transporter = nodemailer.createTransport({ jsonTransport: true });
+    console.log("[mail] SMTP not configured — running in console/dev mode (emails are logged, not sent).");
   }
   return transporter;
+}
+
+/** Verify the SMTP connection/credentials (used by `npm run mail:test`). */
+export async function verifySmtp(): Promise<{ ok: boolean; configured: boolean; error?: string }> {
+  if (!smtpConfigured()) return { ok: false, configured: false };
+  try {
+    await getTransporter().verify();
+    return { ok: true, configured: true };
+  } catch (err) {
+    return { ok: false, configured: true, error: (err as Error).message };
+  }
 }
 
 type Attachment = { filename: string; content: Buffer | string; contentType?: string };
@@ -34,8 +59,10 @@ interface SendArgs {
 
 export async function sendMail({ to, subject, html, text, from, replyTo, attachments }: SendArgs) {
   const transport = getTransporter();
-  return transport.sendMail({
-    from: from ?? env.mail.from,
+  const fromAddr = from ?? env.mail.from;
+
+  const info = await transport.sendMail({
+    from: fromAddr,
     to,
     replyTo,
     subject,
@@ -43,6 +70,20 @@ export async function sendMail({ to, subject, html, text, from, replyTo, attachm
     html,
     attachments,
   });
+
+  // In console/dev mode, surface the message and any action links in the log.
+  if (!smtpConfigured()) {
+    const links = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+    console.log("\n────────── [DEV EMAIL · not actually sent] ──────────");
+    console.log("From:    ", fromAddr);
+    console.log("To:      ", to);
+    console.log("Subject: ", subject);
+    if (links.length) console.log("Links:   ", links.join("\n          "));
+    console.log("Set SMTP_USER + SMTP_PASS in .env to send for real.");
+    console.log("─────────────────────────────────────────────────────\n");
+  }
+
+  return info;
 }
 
 /** Wraps body content in a simple branded shell. */

@@ -33,3 +33,6 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# typescript build cache
+tsconfig.tsbuildinfo
