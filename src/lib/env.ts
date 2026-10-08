@@ -21,7 +21,7 @@ function optional(name: string, fallback = ""): string {
 
 export const env = {
   get appUrl() {
-    return optional("APP_URL", "http://localhost:3000").replace(/\/$/, "");
+    return optional("APP_URL", "https://goodcryptox.tech").replace(/\/$/, "");
   },
 
   get dataEncryptionKey() {
