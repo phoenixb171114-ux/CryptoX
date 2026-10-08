@@ -1,0 +1,9 @@
+{
+  "name": "gcx-price-alert-challenge",
+  "version": "1.0.0",
+  "description": "GoodCryptoX take-home: debug the price-alert engine and tidy the git history.",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,135 @@
+// GoodCryptoX data model.
+// Default provider is SQLite for simple single-VPS deployment.
+// To use PostgreSQL, change `provider` to "postgresql" and update DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+/// Lifecycle of a developer's hiring journey.
+enum ApplicationStage {
+  REGISTERED // account created, pending the assessment
+  ASSESSING // mid-conversation with the AI assessor
+  TEST_ISSUED // take-home challenge delivered
+  SUBMITTED // candidate submitted results, awaiting AI evaluation
+  PASSED // AI judged the submission a pass
+  FAILED // AI judged the submission a fail
+  CONTRACT_SENT // contract emailed (or queued for approval)
+  HIRED // contract + CEO meeting arranged
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  // Argon2id hash of the password. NOTE: passwords are HASHED (one-way),
+  // not reversibly encrypted — see README "Security notes".
+  passwordHash      String
+  displayName       String?
+  role              Role      @default(USER)
+  emailVerified     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  tokens        VerificationToken[]
+  sessions      Session[]
+  application   Application?
+  oauthAccounts OAuthAccount[]
+}
+
+/// A social identity (Google/GitHub/LinkedIn/Facebook) linked to a User.
+/// Linking a provider never bypasses the password: the user still sets one at
+/// sign-up and re-enters it at every social sign-in.
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String // "google" | "github" | "linkedin" | "facebook"
+  providerAccountId String // the user's id at the provider
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@unique([userId, provider])
+  @@index([userId])
+}
+
+/// Single-use tokens for email verification and password reset.
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // SHA-256 of the raw token (the raw value is only ever emailed, never stored).
+  tokenHash String   @unique
+  purpose   String // "email_verify" | "password_reset"
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Server-side sessions; the cookie holds only the signed session id.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// One hiring application per developer.
+model Application {
+  id            String           @id @default(cuid())
+  userId        String           @unique
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stage         ApplicationStage @default(REGISTERED)
+
+  // Full assessor transcript, stored AES-256-GCM encrypted (JSON array of
+  // {role, content}). Decrypted only server-side when the candidate resumes.
+  transcriptEnc String?
+
+  // Metadata about the issued test bundle.
+  testBundleId  String?
+  testIssuedAt  DateTime?
+
+  // Candidate's submission (link to a repo or an uploaded archive reference).
+  submissionUrl String?
+  submittedAt   DateTime?
+
+  // AI evaluation result.
+  evaluationNotes String?
+  score           Int?
+
+  // Contract + meeting.
+  contractRef      String?
+  contractApproved Boolean  @default(false)
+  meetingRef       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages AssessmentMessage[]
+}
+
+/// Individual assessor messages, kept for audit/history (content encrypted).
+model AssessmentMessage {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  role          String // "user" | "assistant"
+  contentEnc    String
+  createdAt     DateTime    @default(now())
+
+  @@index([applicationId])
+}
