@@ -1,12 +1,18 @@
-import { prisma } from "./db";
+import { createApplication, findApplicationByUserId, isDuplicateKeyError, updateApplication } from "./db";
 import { encrypt, decrypt } from "./crypto";
 import type { ChatMessage } from "./ai";
 
 /** Load (and lazily create) the application for a user. */
 export async function getOrCreateApplication(userId: string) {
-  const existing = await prisma.application.findUnique({ where: { userId } });
+  const existing = await findApplicationByUserId(userId);
   if (existing) return existing;
-  return prisma.application.create({ data: { userId, stage: "REGISTERED" } });
+  try {
+    return await createApplication(userId);
+  } catch (err) {
+    // Two first requests raced and the unique index kept one; use that one.
+    if (isDuplicateKeyError(err)) return (await findApplicationByUserId(userId))!;
+    throw err;
+  }
 }
 
 /** Decrypt the stored transcript into an array of chat messages. */
@@ -21,8 +27,5 @@ export function loadTranscript(transcriptEnc: string | null): ChatMessage[] {
 
 /** Persist the transcript (encrypted) back onto the application. */
 export async function saveTranscript(applicationId: string, transcript: ChatMessage[]) {
-  await prisma.application.update({
-    where: { id: applicationId },
-    data: { transcriptEnc: encrypt(JSON.stringify(transcript)) },
-  });
+  await updateApplication(applicationId, { transcriptEnc: encrypt(JSON.stringify(transcript)) });
 }

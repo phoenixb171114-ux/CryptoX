@@ -8,19 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (!user.emailVerified) {
-    return (
-      <main className="container">
-        <div className="form">
-          <h1>Verify your email</h1>
-          <p className="muted">
-            We sent a verification link to <strong>{user.email}</strong>. Click it to activate
-            your account, then sign in again.
-          </p>
-        </div>
-      </main>
-    );
-  }
 
   const app = await getOrCreateApplication(user.id);
   const transcript = loadTranscript(app.transcriptEnc)
@@ -40,6 +27,50 @@ export default async function DashboardPage() {
           {/* progressive enhancement: the client component also exposes logout */}
         </form>
       </div>
+
+      <details className="card" style={{ marginTop: 20 }}>
+        <summary style={{ cursor: "pointer", fontWeight: 700 }}>Your profile</summary>
+        <dl className="profile-grid">
+          <dt>Full name</dt>
+          <dd>{user.displayName || "—"}</dd>
+          <dt>Email</dt>
+          <dd>{user.email}</dd>
+          <dt>Phone</dt>
+          <dd>{user.phone || "—"}</dd>
+          <dt>Address</dt>
+          <dd>
+            {[user.addressLine, user.city, user.country].filter(Boolean).join(", ") || "—"}
+          </dd>
+          <dt>GitHub</dt>
+          <dd>
+            {user.githubUrl ? (
+              <a href={user.githubUrl} target="_blank" rel="noopener noreferrer">
+                {user.githubUrl}
+              </a>
+            ) : (
+              "—"
+            )}
+          </dd>
+          <dt>Portfolio / LinkedIn</dt>
+          <dd>
+            {user.portfolioUrl ? (
+              <a href={user.portfolioUrl} target="_blank" rel="noopener noreferrer">
+                {user.portfolioUrl}
+              </a>
+            ) : (
+              "—"
+            )}
+          </dd>
+          <dt>Resume</dt>
+          <dd>
+            {user.resumeId ? (
+              <a href="/api/profile/resume">{user.resumeName || "Download PDF"}</a>
+            ) : (
+              "—"
+            )}
+          </dd>
+        </dl>
+      </details>
 
       <AssessmentChat
         initialMessages={transcript}

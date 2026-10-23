@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import crypto from "node:crypto";
-import { prisma } from "./db";
+import { createSessionRecord, deleteSession, findSession, findUserById } from "./db";
 import { env } from "./env";
 
 /**
@@ -34,9 +34,7 @@ function parse(cookieValue: string | undefined): string | null {
 }
 
 export async function createSession(userId: string): Promise<void> {
-  const session = await prisma.session.create({
-    data: { userId, expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
-  });
+  const session = await createSessionRecord(userId, new Date(Date.now() + SESSION_TTL_MS));
   cookies().set(COOKIE_NAME, serialize(session.id), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -49,7 +47,7 @@ export async function createSession(userId: string): Promise<void> {
 export async function destroySession(): Promise<void> {
   const sessionId = parse(cookies().get(COOKIE_NAME)?.value);
   if (sessionId) {
-    await prisma.session.deleteMany({ where: { id: sessionId } });
+    await deleteSession(sessionId);
   }
   cookies().delete(COOKIE_NAME);
 }
@@ -58,26 +56,20 @@ export async function getCurrentUser() {
   const sessionId = parse(cookies().get(COOKIE_NAME)?.value);
   if (!sessionId) return null;
 
-  const session = await prisma.session.findUnique({
-    where: { id: sessionId },
-    include: { user: true },
-  });
+  const session = await findSession(sessionId);
   if (!session) return null;
   if (session.expiresAt < new Date()) {
-    await prisma.session.deleteMany({ where: { id: sessionId } });
+    await deleteSession(sessionId);
     return null;
   }
-  return session.user;
+  return findUserById(session.userId);
 }
 
-/** Throws (for route handlers) when no verified user is present. */
-export async function requireVerifiedUser() {
+/** Throws (for route handlers) when no signed-in user is present. */
+export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) {
     throw new AuthError("Not signed in.", 401);
-  }
-  if (!user.emailVerified) {
-    throw new AuthError("Email not verified.", 403);
   }
   return user;
 }

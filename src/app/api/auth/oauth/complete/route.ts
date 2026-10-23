@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { createUser, findUserByEmail, findUserById, isDuplicateKeyError, linkOAuthAccount } from "@/lib/db";
 import { hashPassword, verifyPassword, passwordIssues } from "@/lib/password";
 import { createSession } from "@/lib/auth";
-import { createToken } from "@/lib/tokens";
-import { sendMail, emailLayout, button } from "@/lib/mailer";
-import { env } from "@/lib/env";
 import { verifyToken } from "@/lib/signing";
 import type { Provider } from "@/lib/oauth";
 
@@ -26,7 +23,6 @@ type Pending =
       provider: Provider;
       providerAccountId: string;
       email: string;
-      emailVerified: boolean;
       name: string;
       needEmail?: boolean;
     }
@@ -51,21 +47,14 @@ export async function POST(req: NextRequest) {
 
   // ---- Existing account: re-enter the current password ----
   if (pending.kind === "login") {
-    const user = await prisma.user.findUnique({ where: { id: pending.userId } });
+    const user = await findUserById(pending.userId);
     if (!user) return NextResponse.json({ error: "Account not found." }, { status: 404 });
 
     const ok = await verifyPassword(user.passwordHash, password);
     if (!ok) return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
-    if (!user.emailVerified) {
-      return NextResponse.json({ error: "Please verify your email before signing in." }, { status: 403 });
-    }
 
     // Link the provider now that ownership is proven via the password.
-    await prisma.oAuthAccount.upsert({
-      where: { provider_providerAccountId: { provider: pending.provider, providerAccountId: pending.providerAccountId } },
-      update: {},
-      create: { userId: user.id, provider: pending.provider, providerAccountId: pending.providerAccountId },
-    });
+    await linkOAuthAccount(user.id, pending.provider, pending.providerAccountId);
 
     cookies().delete(PENDING_COOKIE);
     await createSession(user.id);
@@ -80,63 +69,37 @@ export async function POST(req: NextRequest) {
   }
 
   // Determine the account email. Providers that don't expose one (Twitter/X)
-  // require the user to enter it here; it then goes through email verification.
+  // require the user to enter it here.
   let email: string;
-  let providerVerifiedEmail = pending.emailVerified;
   if (pending.needEmail || !pending.email) {
     const entered = parsed.data.email?.toLowerCase().trim();
     if (!entered) {
       return NextResponse.json({ error: "Please enter your email address." }, { status: 400 });
     }
     email = entered;
-    providerVerifiedEmail = false; // must verify via our own email flow
   } else {
     email = pending.email;
   }
 
   // Guard against a race where the email was registered meanwhile.
-  const clash = await prisma.user.findUnique({ where: { email } });
+  const clash = await findUserByEmail(email);
   if (clash) {
     cookies().delete(PENDING_COOKIE);
     return NextResponse.json({ error: "An account with this email already exists. Please sign in." }, { status: 409 });
   }
 
   const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      displayName: pending.name || null,
-      emailVerified: providerVerifiedEmail ? new Date() : null,
-      oauthAccounts: {
-        create: { provider: pending.provider, providerAccountId: pending.providerAccountId },
-      },
-    },
-  });
+  let user;
+  try {
+    user = await createUser({ email, passwordHash, displayName: pending.name || null });
+  } catch (err) {
+    if (!isDuplicateKeyError(err)) throw err;
+    cookies().delete(PENDING_COOKIE);
+    return NextResponse.json({ error: "An account with this email already exists. Please sign in." }, { status: 409 });
+  }
+  await linkOAuthAccount(user.id, pending.provider, pending.providerAccountId);
 
   cookies().delete(PENDING_COOKIE);
-
-  // If the email wasn't provider-verified, require our email verification.
-  if (!providerVerifiedEmail) {
-    const raw = await createToken(user.id, "email_verify");
-    const link = `${env.appUrl}/verify?token=${encodeURIComponent(raw)}`;
-    try {
-      await sendMail({
-        to: user.email,
-        from: env.mail.from,
-        subject: "Verify your GoodCryptoX account",
-        html: emailLayout(
-          "Confirm your email",
-          `<p>Thanks for signing up! Please confirm your email to activate your account.</p>
-           <p>${button(link, "Verify my email")}</p>`
-        ),
-      });
-    } catch (err) {
-      console.error("verification email failed:", (err as Error).message);
-    }
-    return NextResponse.json({ ok: true, needVerify: true });
-  }
-
   await createSession(user.id);
   return NextResponse.json({ ok: true });
 }

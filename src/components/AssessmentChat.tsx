@@ -26,10 +26,24 @@ export default function AssessmentChat({
   const [submissionUrl, setSubmissionUrl] = useState("");
   const [note, setNote] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
+
+  // Grow the textarea with its content (capped by max-height in CSS).
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  // Hand focus back once Nova has replied.
+  useEffect(() => {
+    if (!busy) inputRef.current?.focus({ preventScroll: true });
+  }, [busy]);
 
   // Auto-start the conversation if there's no history yet.
   useEffect(() => {
@@ -94,36 +108,25 @@ export default function AssessmentChat({
         <div className="card" style={{ marginBottom: 20 }}>
           <h3>Your take-home challenge is ready 🔐</h3>
           <p>
-            The challenge bundle is encrypted for your account. Download it, then unpack it
-            into files (see the note below). Push your solution to a git host and submit the
-            repository link.
+            The challenge is a password-protected ZIP. The password is the email address
+            you signed up with. Unzip it, solve it, push your solution to a git host and
+            submit the repository link.
           </p>
           <p style={{ marginTop: 12 }}>
             <a className="btn" href="/api/application/test">
-              Download challenge (JSON)
+              Download challenge (.zip)
             </a>
           </p>
           <details style={{ marginTop: 12 }}>
             <summary className="muted" style={{ cursor: "pointer" }}>
-              How to unpack the download
+              Can&apos;t open the ZIP?
             </summary>
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                background: "var(--bg-elev2)",
-                padding: 12,
-                borderRadius: 8,
-                fontSize: 13,
-              }}
-            >{`// save as unpack.mjs, then:  node unpack.mjs gcx-challenge.json
-import fs from "node:fs";
-import path from "node:path";
-const bundle = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-for (const f of bundle.files) {
-  fs.mkdirSync(path.dirname(f.path), { recursive: true });
-  fs.writeFileSync(f.path, f.content);
-}
-console.log("Unpacked", bundle.files.length, "files. Start with CHALLENGE.md");`}</pre>
+            <p className="muted" style={{ fontSize: 14, marginBottom: 0 }}>
+              It uses AES-256 encryption, which the built-in Windows and macOS extractors
+              don&apos;t support. Use <strong>7-Zip</strong> or <strong>WinRAR</strong> (Windows),{" "}
+              <strong>Keka</strong> (macOS), or run <code>7z x gcx-challenge.zip</code>. Enter your
+              email in lowercase, then start with <code>CHALLENGE.md</code>.
+            </p>
           </details>
 
           <form onSubmit={submitWork} style={{ marginTop: 16 }}>
@@ -177,10 +180,19 @@ console.log("Unpacked", bundle.files.length, "files. Start with CHALLENGE.md");`
             void send(input);
           }}
         >
-          <input
-            placeholder="Message Nova…"
+          <textarea
+            ref={inputRef}
+            rows={1}
+            placeholder="Message Nova… (Shift+Enter for a new line)"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter sends; Shift+Enter inserts a newline. Skip while an IME is composing.
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                void send(input);
+              }
+            }}
             disabled={busy}
           />
           <button className="btn" type="submit" disabled={busy}>

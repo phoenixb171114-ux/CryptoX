@@ -2,9 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // Native/N-API modules: keep them external to the server bundle.
+  // Native/N-API and Node-only modules: keep them external to the server bundle.
   experimental: {
-    serverComponentsExternalPackages: ["@node-rs/argon2", "@prisma/client"],
+    serverComponentsExternalPackages: ["@node-rs/argon2", "mongodb", "@zip.js/zip.js"],
   },
 };
 

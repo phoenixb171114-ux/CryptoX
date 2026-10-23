@@ -23,6 +23,7 @@ next-env.d.ts
 
 # encrypted test payloads generated at runtime
 /storage/test-bundles/
+/storage/resumes/
 
 # logs
 *.log

@@ -125,12 +125,14 @@ a:hover {
   color: var(--text);
 }
 .brand-text b {
-  background: var(--grad);
+  /* matches the GX mark's green → blue */
+  background: linear-gradient(135deg, #01ef67 0%, #092cfb 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .logo-mark {
+  color: var(--text); /* the mark's first gradient stop */
   transition: transform 0.4s ease;
 }
 .brand:hover .logo-mark {
@@ -149,6 +151,128 @@ a:hover {
 .nav-links a:hover {
   color: var(--text);
   text-decoration: none;
+}
+.nav-links a.btn,
+.nav-links a.btn:hover {
+  color: #fff;
+}
+
+/* Every .container is its own z-index:1 layer; lift the nav's above the page
+   content so the profile dropdown isn't covered (e.g. by the hero art). */
+.container.nav-wrap {
+  z-index: 30;
+}
+
+/* ---------- user menu (signed-in nav) ---------- */
+.user-menu {
+  position: relative;
+}
+.user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.user-trigger:hover {
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+}
+.user-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--grad);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.avatar.lg {
+  width: 42px;
+  height: 42px;
+  font-size: 16px;
+}
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 260px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+.user-dropdown-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.user-dropdown-name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-dropdown-email {
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-links .user-dropdown a,
+.user-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.nav-links .user-dropdown a:hover,
+.user-dropdown button:hover {
+  background: var(--surface-2);
+  text-decoration: none;
+}
+.user-dropdown button {
+  color: var(--danger);
+}
+@media (max-width: 560px) {
+  .user-name {
+    display: none;
+  }
+  .user-trigger {
+    padding-right: 8px;
+  }
 }
 
 /* ---------- buttons ---------- */
@@ -418,7 +542,7 @@ section.block h2 {
 
 /* ---------- forms ---------- */
 .form {
-  max-width: 440px;
+  max-width: 480px;
   margin: 56px auto;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -455,6 +579,104 @@ section.block h2 {
   border-color: var(--teal);
   background: #fff;
   box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.14);
+}
+/* sign-up step indicator */
+.steps {
+  display: flex;
+  gap: 18px;
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted-2);
+}
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.steps .step-num {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 12px;
+}
+.steps li.active {
+  color: var(--text);
+}
+.steps li.active .step-num {
+  background: var(--grad);
+  border-color: transparent;
+  color: #fff;
+}
+.steps li.done {
+  color: var(--ok);
+}
+.steps li.done .step-num {
+  background: var(--ok);
+  border-color: transparent;
+  color: #fff;
+}
+/* Two fields side by side (e.g. Country / City); stacks on narrow screens. */
+.form-row {
+  display: flex;
+  gap: 14px;
+}
+.form-row .field {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 480px) {
+  .form-row {
+    display: block;
+  }
+}
+.field input[type="file"] {
+  padding: 9px 12px;
+  cursor: pointer;
+  background: var(--surface-2);
+}
+.field input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* dashboard profile card */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 8px 16px;
+  margin: 14px 0 0;
+  font-size: 14px;
+}
+.profile-grid dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.profile-grid dd {
+  margin: 0;
+  word-break: break-word;
+}
+@media (max-width: 520px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+    gap: 2px 0;
+  }
+  .profile-grid dd {
+    margin-bottom: 8px;
+  }
 }
 .notice {
   padding: 11px 14px;
@@ -629,21 +851,27 @@ section.block h2 {
 }
 .chat-input {
   display: flex;
+  align-items: flex-end;
   gap: 10px;
   padding: 14px;
   border-top: 1px solid var(--border);
   background: #fff;
 }
-.chat-input input {
+.chat-input textarea {
   flex: 1;
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text);
+  font: inherit;
   font-size: 15px;
+  line-height: 1.45;
+  resize: none;
+  max-height: 180px;
+  overflow-y: auto;
 }
-.chat-input input:focus {
+.chat-input textarea:focus {
   outline: none;
   border-color: var(--teal);
   background: #fff;

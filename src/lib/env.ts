@@ -24,38 +24,17 @@ export const env = {
     return optional("APP_URL", "https://goodcryptox.tech").replace(/\/$/, "");
   },
 
+  // MongoDB connection string; the database name is the URI path,
+  // e.g. mongodb://127.0.0.1:27017/goodcryptox
+  get mongodbUri() {
+    return requireVar("MONGODB_URI");
+  },
+
   get dataEncryptionKey() {
     return requireVar("DATA_ENCRYPTION_KEY");
   },
   get sessionSecret() {
     return requireVar("SESSION_SECRET");
-  },
-
-  smtp: {
-    get host() {
-      return optional("SMTP_HOST", "smtp.hostinger.com");
-    },
-    get port() {
-      return Number(optional("SMTP_PORT", "465"));
-    },
-    get secure() {
-      return optional("SMTP_SECURE", "true") === "true";
-    },
-    get user() {
-      return optional("SMTP_USER");
-    },
-    get pass() {
-      return optional("SMTP_PASS");
-    },
-  },
-  mail: {
-    // The single business mailbox used for all outgoing mail.
-    get from() {
-      return optional("MAIL_FROM", "GoodCryptoX <event@goodcryptox.tech>");
-    },
-    get reviewInbox() {
-      return optional("HIRING_REVIEW_INBOX", "event@goodcryptox.tech");
-    },
   },
 
   get deepseekApiKey() {
@@ -112,9 +91,6 @@ export const env = {
     },
   },
 
-  get requireContractApproval() {
-    return optional("REQUIRE_CONTRACT_APPROVAL", "true") === "true";
-  },
   get signatoryName() {
     return optional("COMPANY_SIGNATORY_NAME", "GoodCryptoX");
   },

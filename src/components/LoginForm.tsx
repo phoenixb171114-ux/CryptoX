@@ -11,7 +11,6 @@ function Inner() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const verifyState = params.get("verify");
   const oauthState = params.get("oauth");
 
   async function submit(e: React.FormEvent) {
@@ -26,7 +25,10 @@ function Inner() {
       });
       const data = await res.json();
       if (!res.ok) setErr(data.error ?? "Sign in failed.");
-      else router.push("/dashboard");
+      else {
+        router.push("/dashboard");
+        router.refresh(); // re-render the layout so the nav shows the profile
+      }
     } catch {
       setErr("Network error. Please try again.");
     } finally {
@@ -36,12 +38,6 @@ function Inner() {
 
   return (
     <>
-      {verifyState === "success" && (
-        <div className="notice ok">Email verified — you can sign in now.</div>
-      )}
-      {verifyState === "invalid" && (
-        <div className="notice err">That verification link is invalid or expired.</div>
-      )}
       {oauthState === "error" && (
         <div className="notice err">Social sign-in failed. Please try again.</div>
       )}

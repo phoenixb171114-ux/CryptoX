@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/db";
+import { findOAuthAccount, findUserByEmail, findUserById } from "@/lib/db";
 import { PROVIDERS, exchangeCode, fetchProfile, type Provider } from "@/lib/oauth";
 import { signToken, verifyToken } from "@/lib/signing";
 
@@ -42,14 +42,10 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
   }
 
   // Find the account: first by the linked provider identity, then by email.
-  const linked = await prisma.oAuthAccount.findUnique({
-    where: {
-      provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId },
-    },
-  });
-  let user = linked ? await prisma.user.findUnique({ where: { id: linked.userId } }) : null;
+  const linked = await findOAuthAccount(provider, profile.providerAccountId);
+  let user = linked ? await findUserById(linked.userId) : null;
   if (!user && profile.email) {
-    user = await prisma.user.findUnique({ where: { email: profile.email } });
+    user = await findUserByEmail(profile.email);
   }
 
   let pending: string;
@@ -71,7 +67,6 @@ export async function GET(req: NextRequest, { params }: { params: { provider: st
         provider,
         providerAccountId: profile.providerAccountId,
         email: profile.email ?? "",
-        emailVerified: profile.emailVerified,
         name: profile.name ?? "",
         needEmail,
       },

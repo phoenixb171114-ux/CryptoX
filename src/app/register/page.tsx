@@ -1,13 +1,20 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import RegisterForm from "@/components/RegisterForm";
 import SocialButtons from "@/components/SocialButtons";
 
-export default function RegisterPage() {
+export const dynamic = "force-dynamic";
+
+export default async function RegisterPage() {
+  // Already signed in: go straight to the application.
+  if (await getCurrentUser()) redirect("/dashboard");
+
   return (
     <main className="container">
       <div className="form">
         <h1>Create your account</h1>
         <p className="muted" style={{ marginTop: 0 }}>
-          This begins your developer application. We&apos;ll email a verification link.
+          This begins your developer application.
         </p>
         <RegisterForm />
         <SocialButtons mode="signup" />

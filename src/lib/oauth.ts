@@ -8,7 +8,7 @@ import { env } from "./env";
  *
  * Note on email: Google, LinkedIn, Facebook, and GitHub return a verified
  * email. Twitter/X (OAuth2) does NOT expose email, so for such providers we
- * collect the email on the password step and verify it via our own email flow.
+ * collect the email on the password step.
  */
 
 export type Provider = "google" | "facebook" | "linkedin" | "twitter" | "github";
@@ -17,7 +17,6 @@ export const PROVIDERS: Provider[] = ["google", "facebook", "linkedin", "twitter
 export interface OAuthProfile {
   providerAccountId: string;
   email?: string; // absent for providers that don't expose it (Twitter/X)
-  emailVerified: boolean;
   name?: string;
 }
 
@@ -61,7 +60,6 @@ const CONFIG: Record<Provider, ProviderConfig> = {
       return {
         providerAccountId: String(u.sub),
         email: String(u.email).toLowerCase(),
-        emailVerified: Boolean(u.email_verified),
         name: u.name,
       };
     },
@@ -81,7 +79,6 @@ const CONFIG: Record<Provider, ProviderConfig> = {
       return {
         providerAccountId: String(u.id),
         email: String(u.email).toLowerCase(),
-        emailVerified: true,
         name: u.name,
       };
     },
@@ -100,7 +97,6 @@ const CONFIG: Record<Provider, ProviderConfig> = {
       return {
         providerAccountId: String(u.sub),
         email: String(u.email).toLowerCase(),
-        emailVerified: Boolean(u.email_verified ?? true),
         name: u.name,
       };
     },
@@ -122,7 +118,6 @@ const CONFIG: Record<Provider, ProviderConfig> = {
       // Twitter/X does not expose email via OAuth2 — collected later from the user.
       return {
         providerAccountId: String(u.id),
-        emailVerified: false,
         name: u.name ?? u.username,
       };
     },
@@ -149,7 +144,6 @@ const CONFIG: Record<Provider, ProviderConfig> = {
       return {
         providerAccountId: String(user.id),
         email: String(primary.email).toLowerCase(),
-        emailVerified: true,
         name: user.name ?? user.login,
       };
     },

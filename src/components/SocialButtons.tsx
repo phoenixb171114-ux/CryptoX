@@ -3,9 +3,8 @@ import { configuredProviders, PROVIDERS, providerLabel, type Provider } from "@/
 /**
  * Social sign-in buttons with official brand marks.
  *
- * In development every provider is shown so the feature is visible while you
- * set up credentials; in production only configured providers appear. Clicking
- * an unconfigured provider returns a friendly "not enabled yet" message.
+ * Only providers with credentials configured in `.env` are shown; when none
+ * are configured the whole section is hidden (social login is effectively off).
  */
 
 const ICON: Record<Provider, React.ReactNode> = {
@@ -44,8 +43,7 @@ const DISPLAY: Partial<Record<Provider, string>> = { twitter: "X" };
 
 export default function SocialButtons({ mode }: { mode: "signup" | "login" }) {
   const configured = new Set(configuredProviders());
-  const isDev = process.env.NODE_ENV !== "production";
-  const providers = isDev ? PROVIDERS : PROVIDERS.filter((p) => configured.has(p));
+  const providers = PROVIDERS.filter((p) => configured.has(p));
 
   if (providers.length === 0) return null;
 

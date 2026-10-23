@@ -37,13 +37,9 @@ function FinishForm() {
       const data = await res.json();
       if (!res.ok) {
         setMsg({ type: "err", text: data.error ?? "Something went wrong." });
-      } else if (data.needVerify) {
-        setMsg({
-          type: "ok",
-          text: "Account created! Check your email to verify it, then sign in.",
-        });
       } else {
         router.push("/dashboard");
+        router.refresh(); // re-render the layout so the nav shows the profile
       }
     } catch {
       setMsg({ type: "err", text: "Network error. Please try again." });
@@ -59,7 +55,7 @@ function FinishForm() {
         {isSignup && needEmail ? (
           <>
             {providerName} confirmed your identity. {providerName} doesn&apos;t share your
-            email, so please add it below — we&apos;ll send a verification link. GoodCryptoX
+            email, so please add it below. GoodCryptoX
             accounts always have a password too, so create one to finish.
           </>
         ) : isSignup ? (

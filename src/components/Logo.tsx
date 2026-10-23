@@ -1,48 +1,49 @@
 /**
- * GoodCryptoX brand mark: a security shield (self-custody) with a bold "X",
- * using the brand teal→violet gradient. Pairs with the wordmark.
+ * GoodCryptoX brand mark (the "GX" monogram). The original
+ * fades from white, which vanishes on our light UI, so that stop uses
+ * `currentColor` (set via `.logo-mark { color }`) to stay visible on any
+ * background. Pairs with the wordmark.
  */
-export function LogoMark({ size = 36 }: { size?: number }) {
+export function LogoMark({ height = 26 }: { height?: number }) {
   return (
     <svg
-      width={size}
-      height={size}
-      viewBox="0 0 40 44"
+      width={(height * 42) / 24}
+      height={height}
+      viewBox="0 0 42 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       className="logo-mark"
     >
+      <path
+        d="M26.0556 15.2018L29.2597 11.9866L41.174 0.0279835L34.7764 0.00863518L26.0513 8.76707L26.0331 8.7488L22.8268 11.9661L22.8439 11.9834L17.9027 16.9405L17.354 17.4911C15.9666 18.7366 14.1693 19.4237 12.3077 19.4202C8.16482 19.4202 4.80635 16.0954 4.80635 11.9866C4.80635 7.87781 8.16589 4.55399 12.3077 4.55399C14.2935 4.54906 16.2007 5.33218 17.6133 6.73258L20.0202 9.14666L23.2265 5.92933L21.4872 4.18302C21.1192 3.75653 20.721 3.35726 20.2956 2.98833L20.2324 2.9249C18.0248 1.03179 15.2148 -0.00578401 12.3109 2.42541e-05C5.63151 2.42541e-05 0.213379 5.36802 0.213379 11.9844C0.213379 18.6008 5.63151 23.9688 12.3109 23.9688C15.1919 23.9754 17.9813 22.9539 20.1809 21.087L20.2227 21.044C20.6952 20.6395 21.1353 20.1984 21.5387 19.7246L26.0524 15.1942L26.0556 15.2018Z"
+        fill="url(#gcxMark0)"
+      />
+      <path d="M32.0727 14.805L28.8696 18.0202L34.8386 24H41.2533L32.0727 14.805Z" fill="url(#gcxMark1)" />
+      <path d="M41.1747 0.0301523L34.7771 0.0118713L21.8662 12.9662L25.0296 16.2298L41.1747 0.0301523Z" fill="url(#gcxMark2)" />
       <defs>
-        <linearGradient id="gcxGrad" x1="2" y1="2" x2="38" y2="42" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#22d3ee" />
-          <stop offset="0.5" stopColor="#06b6d4" />
-          <stop offset="1" stopColor="#7c3aed" />
+        <linearGradient id="gcxMark0" x1="0.210164" y1="11.9909" x2="41.1751" y2="11.9909" gradientUnits="userSpaceOnUse">
+          <stop offset="0.13" stopColor="currentColor" />
+          <stop offset="0.48" stopColor="#01EF67" />
+        </linearGradient>
+        <linearGradient id="gcxMark1" x1="30.9657" y1="44.5009" x2="38.6878" y2="0.510147" gradientUnits="userSpaceOnUse">
+          <stop offset="0.54" stopColor="#01EF67" />
+          <stop offset="0.66" stopColor="#01EF67" />
+          <stop offset="0.67" stopColor="#092CFB" />
+        </linearGradient>
+        <linearGradient id="gcxMark2" x1="33.0239" y1="15.5061" x2="30.4866" y2="0.411508" gradientUnits="userSpaceOnUse">
+          <stop offset="0.23" stopColor="#01EF67" stopOpacity="0" />
+          <stop offset="1" stopColor="#092CFB" />
         </linearGradient>
       </defs>
-      <path
-        d="M20 2L35 7.5V22C35 31.5 28.5 38.5 20 41.5C11.5 38.5 5 31.5 5 22V7.5L20 2Z"
-        fill="url(#gcxGrad)"
-      />
-      <path
-        d="M20 2L35 7.5V22C35 31.5 28.5 38.5 20 41.5C11.5 38.5 5 31.5 5 22V7.5L20 2Z"
-        fill="white"
-        fillOpacity="0.08"
-      />
-      <path
-        d="M14 15.5L26 28.5M26 15.5L14 28.5"
-        stroke="white"
-        strokeWidth="4.2"
-        strokeLinecap="round"
-      />
     </svg>
   );
 }
 
-export function Logo({ size = 34 }: { size?: number }) {
+export function Logo({ height = 26 }: { height?: number }) {
   return (
     <span className="brand">
-      <LogoMark size={size} />
+      <LogoMark height={height} />
       <span className="brand-text">
         GoodCrypto<b>X</b>
       </span>

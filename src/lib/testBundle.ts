@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { configure, ZipWriter, Uint8ArrayReader, Uint8ArrayWriter } from "@zip.js/zip.js";
 import { deriveKey, encryptWithKey, decryptWithKey } from "./crypto";
+
+// Compress on the main thread: zip.js defaults to Web Workers, which Node lacks.
+configure({ useWebWorkers: false });
 
 /**
  * Packages the `./test` directory into a single bundle and encrypts it with a
@@ -13,33 +17,47 @@ import { deriveKey, encryptWithKey, decryptWithKey } from "./crypto";
  *     blob.
  *
  * The master key never leaves the server, so decryption happens server-side for
- * the authenticated owner; the plaintext bundle is then streamed over HTTPS.
+ * the authenticated owner, then re-packed as a password-protected ZIP
+ * (AES-256, password = the candidate's email) for download.
  */
 
 const TEST_DIR = path.join(process.cwd(), "test");
 const STORAGE_DIR = path.join(process.cwd(), "storage", "test-bundles");
 
-interface BundleFile {
-  path: string; // relative path within the bundle
-  content: string; // utf-8 file contents
-}
+/**
+ * One entry of the bundle. The challenge is a git exercise, so the bundle is a
+ * byte-exact copy of `./test`: binary files (git objects, screenshots) as
+ * base64, and empty directories (e.g. `client/`, `.git/refs/tags`) as their
+ * own entries so they survive the round trip.
+ */
+type BundleEntry =
+  | { path: string; type: "file"; data: string } // data: base64
+  | { path: string; type: "dir" };
 
 interface Bundle {
   name: string;
   createdAt: string;
-  files: BundleFile[];
+  version?: 2; // absent on legacy bundles (text files only, no .git)
+  entries?: BundleEntry[];
+  files?: { path: string; content: string }[]; // legacy: utf-8 contents
 }
 
-function walk(dir: string, baseDir: string, acc: BundleFile[]): void {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === ".git" || entry.name === "node_modules") continue;
+// Everything is copied, including `.git`; only installed dependencies are skipped.
+const SKIP = new Set(["node_modules"]);
+
+function walk(dir: string, baseDir: string, acc: BundleEntry[]): void {
+  const entries = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => !SKIP.has(e.name));
+  const rel = path.relative(baseDir, dir).split(path.sep).join("/");
+  if (entries.length === 0 && rel) acc.push({ path: rel, type: "dir" });
+  for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       walk(full, baseDir, acc);
-    } else {
+    } else if (entry.isFile()) {
       acc.push({
         path: path.relative(baseDir, full).split(path.sep).join("/"),
-        content: fs.readFileSync(full, "utf8"),
+        type: "file",
+        data: fs.readFileSync(full).toString("base64"),
       });
     }
   }
@@ -49,13 +67,24 @@ function buildBundle(): Bundle {
   if (!fs.existsSync(TEST_DIR)) {
     throw new Error(`Test directory not found at ${TEST_DIR}`);
   }
-  const files: BundleFile[] = [];
-  walk(TEST_DIR, TEST_DIR, files);
+  const entries: BundleEntry[] = [];
+  walk(TEST_DIR, TEST_DIR, entries);
   return {
     name: "gcx-take-home-challenge",
     createdAt: new Date().toISOString(),
-    files,
+    version: 2,
+    entries,
   };
+}
+
+/** Normalise legacy (text-only) bundles to the current entry format. */
+function bundleEntries(bundle: Bundle): BundleEntry[] {
+  if (bundle.entries) return bundle.entries;
+  return (bundle.files ?? []).map((f) => ({
+    path: f.path,
+    type: "file" as const,
+    data: Buffer.from(f.content, "utf8").toString("base64"),
+  }));
 }
 
 /**
@@ -86,4 +115,23 @@ export function openTestBundle(id: string, email: string): Bundle {
   // GCM auth tag verification fails loudly if the email (hence key) is wrong.
   const json = decryptWithKey(packaged, key).toString("utf8");
   return JSON.parse(json) as Bundle;
+}
+
+/**
+ * Pack a bundle as a password-protected ZIP (AES-256, WinZip AE-2 format).
+ * Everything sits under a top-level `gcx-challenge/` folder, `.git` and empty
+ * folders included. Opens with 7-Zip, WinRAR, Keka, or `7z x`; the built-in
+ * Windows/macOS extractors and Info-ZIP `unzip` don't support AES.
+ */
+export async function zipTestBundle(bundle: Bundle, password: string): Promise<Uint8Array> {
+  const writer = new ZipWriter(new Uint8ArrayWriter(), { password, encryptionStrength: 3 });
+  for (const e of bundleEntries(bundle)) {
+    const name = `gcx-challenge/${e.path}`;
+    if (e.type === "dir") {
+      await writer.add(`${name}/`, undefined, { directory: true });
+    } else {
+      await writer.add(name, new Uint8ArrayReader(Buffer.from(e.data, "base64")));
+    }
+  }
+  return writer.close();
 }

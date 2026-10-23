@@ -5,20 +5,15 @@
   "description": "GoodCryptoX corporate website: company intro, AI-driven developer hiring, and user accounts.",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "mail:test": "node --env-file=.env scripts/test-smtp.mjs"
+    "lint": "next lint"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
-    "@prisma/client": "^6.2.0",
+    "@zip.js/zip.js": "2.18.2",
+    "mongodb": "7.6.0",
     "next": "^14.2.35",
-    "nodemailer": "^6.9.16",
     "openai": "^4.104.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,10 +21,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "@types/nodemailer": "^6.4.17",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "prisma": "^6.2.0",
     "typescript": "^5.7.2"
   },
   "engines": {

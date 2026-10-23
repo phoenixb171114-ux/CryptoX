@@ -1,5 +1,6 @@
 import HeroArt from "@/components/HeroArt";
 import Reveal from "@/components/Reveal";
+import { getCurrentUser } from "@/lib/auth";
 import {
   ShieldIcon,
   BellIcon,
@@ -9,7 +10,9 @@ import {
   GlobeIcon,
 } from "@/components/Icons";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const applyHref = (await getCurrentUser()) ? "/dashboard" : "/login";
+
   return (
     <main>
       <div className="container">
@@ -28,7 +31,7 @@ export default function HomePage() {
               your data are yours. No custody games, no dark patterns.
             </p>
             <p style={{ marginTop: 28, display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <a className="btn" href="/register">
+              <a className="btn" href={applyHref}>
                 Start your application →
               </a>
               <a className="btn secondary" href="#careers">
@@ -121,7 +124,7 @@ export default function HomePage() {
           </Reveal>
           <div className="grid">
             {[
-              ["01", "Register", "Create an account and verify your email. That's all we need — no résumé upload required."],
+              ["01", "Register", "Create an account. That's all we need — no résumé upload required."],
               ["02", "Talk with Nova", "Nova, our AI hiring assistant, has a friendly chat about your background. A conversation, not an interrogation."],
               ["03", "A short take-home", "You'll get a small, encrypted debugging & git challenge — about an hour. We care how you think."],
               ["04", "Offer & meet the CEO", "Pass, and we'll send a signed contract and set up an introductory call with our CEO."],
@@ -137,7 +140,7 @@ export default function HomePage() {
           </div>
           <Reveal>
             <p style={{ marginTop: 32 }}>
-              <a className="btn" href="/register">
+              <a className="btn" href={applyHref}>
                 Apply now — it starts with a chat →
               </a>
             </p>

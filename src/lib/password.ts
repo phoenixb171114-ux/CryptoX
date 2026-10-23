@@ -1,5 +1,7 @@
 import { hash, verify } from "@node-rs/argon2";
 
+export { passwordIssues } from "./passwordPolicy";
+
 /**
  * Password storage.
  *
@@ -28,14 +30,4 @@ export async function verifyPassword(hashStr: string, plain: string): Promise<bo
   } catch {
     return false;
   }
-}
-
-/** Minimal strength policy; expand as needed. */
-export function passwordIssues(pw: string): string[] {
-  const issues: string[] = [];
-  if (pw.length < 10) issues.push("Password must be at least 10 characters.");
-  if (!/[a-z]/.test(pw)) issues.push("Add a lowercase letter.");
-  if (!/[A-Z]/.test(pw)) issues.push("Add an uppercase letter.");
-  if (!/[0-9]/.test(pw)) issues.push("Add a number.");
-  return issues;
 }
