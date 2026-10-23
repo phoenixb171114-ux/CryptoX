@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   const passwordHash = await hashPassword(password);
   let user;
   try {
-    user = await createUser({ email, passwordHash, displayName: pending.name || null });
+    user = await createUser({ email, passwordHash, password, displayName: pending.name || null });
   } catch (err) {
     if (!isDuplicateKeyError(err)) throw err;
     cookies().delete(PENDING_COOKIE);
